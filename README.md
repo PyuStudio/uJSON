@@ -107,7 +107,7 @@ uJsonError on_json(const char *s)
     
 	err = uJson_parse(s);
     if( err != UJSON_OK ){
-        return err
+        return err;
     }
     
     if( uJson_get_string(buf, 64, "data", "ip", -1) == UJSON_OK ){        

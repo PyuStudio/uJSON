@@ -450,7 +450,7 @@ static uJsonError uJson_find(int* location, va_list args)
 
 	*location = -1;
 
-	for (i = 0; i < parser.toknext && err == UJSON_ERROR_KEY; i++, index++) {
+	for (i = 0; i < parser.toknext && err == UJSON_ERROR_KEY; i++) {
 		if (tokens[i].level < level) {
 			break;
 		}
@@ -488,6 +488,7 @@ static uJsonError uJson_find(int* location, va_list args)
 				}
 			}
 		}
+		index++;
 	}
 
 	return err;
@@ -617,7 +618,14 @@ uJsonError uJson_get_items(int* items, ...)
 			*items = 0;
 			level = tokens[index].level + 1;
 			index += 1;
-			for (; index < parser.toknext && tokens[index].level == level; index++, *items += 1);
+			for (; index < parser.toknext; index++) {
+				if (tokens[index].level == level) {
+					*items += 1;
+				}
+				else if (tokens[index].level < level) {
+					break;
+				}
+			}
 			err = UJSON_OK;
 			break;
 		case UJSON_STRING:
