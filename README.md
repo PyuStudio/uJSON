@@ -30,7 +30,7 @@ Features
 * highly portable (tested on x86/amd64, ARM, AVR)
 * only two files
 * extremely small code footprint
-* APIs of easy to use
+* APIs for easy to use
 * no dynamic memory allocation
 * incremental single-pass parsing
 * library code is covered with unit-tests
@@ -185,8 +185,8 @@ To create a json string, it quite simple, too. First, you must call uJson_create
 ```
   char buf[128];
   uJson_create_root_array(buf, 128); // the content of buf is "[]" after this step
-  uJson_add_item(UJSON_PRIMITIVE, NULL, "1", 0, -1); //  the buf changes to "[1]"
-  uJson_add_item(UJSON_PRIMITIVE, NULL, "{}", 1, -1); // the buf changes to "[1, {}]"
+  uJson_add_item(UJSON_PRIMITIVE, NULL, "1", -1); //  the buf changes to "[1]"
+  uJson_add_item(UJSON_PRIMITIVE, NULL, "{}", -1); // the buf changes to "[1, {}]"
   uJson_add_item(UJSON_STRING, "key", "val", 1, -1); // the buf changes to "[1, {\"key\":\"val\"}]" finally
 ```
 
