@@ -9,12 +9,12 @@ I studied server open json parser. But none of them met my requirement. Some nee
 
 Finally, I decided to write the json parser by my self. 
 
-Thanks zserge, who gave me the idea to implement the parser quickly. 
+Thanks [zserge](https://github.com/zserge), who gave me the idea to implement the parser quickly. 
 
 Philosophy
 ----------
 
-Inspired by jsmn[https://github.com/zserge/jsmn], the philosophy of uJson likes the philosophy of jsmn. 
+Inspired by [jsmn](https://github.com/zserge/jsmn), the philosophy of uJson likes the philosophy of jsmn. 
 
 uJson is also designed to be	**robust** (it should work fine even with erroneous
 data), **fast** (it should parse data on the fly), **portable** (no superfluous
@@ -105,7 +105,7 @@ uJsonError on_json(const char *s)
     int i, numbers, val;
     uJsonError err;
     
-	  err = uJson_parse(s);
+	err = uJson_parse(s);
     if( err != UJSON_OK ){
         return err
     }
@@ -122,6 +122,7 @@ uJsonError on_json(const char *s)
         }
     }
 }
+```
 
 
 
@@ -135,7 +136,6 @@ Token types are described by `uJsonNodeType`:
 
 
 ```
-
   typedef enum {
     UJSON_UNDEFINED = 0,
     UJSON_OBJECT = 1,
@@ -143,7 +143,7 @@ Token types are described by `uJsonNodeType`:
     UJSON_STRING = 3,
     UJSON_PRIMITIVE = 4
   } uJsonNodeType;
-
+```
 
 
 **Note:** Unlike JSON data types, primitive tokens are not divided into
@@ -154,54 +154,61 @@ first character:
 * <code>'n'</code> - null
 * <code>'-', '0'..'9'</code> - number
 
-Token is an object of `jsmntok_t` type:
 
-	typedef struct {
-		jsmntype_t type; // Token type
-		int start;       // Token start position
-		int end;         // Token end position
-		int size;        // Number of child (nested) tokens
-	} jsmntok_t;
+To parse a json string, it is quite easy. You can call the parser like this:
+  
+  const char *s = "[1, {\"key\":\"val\"}]"
+  uJson_parse(s);
 
-**Note:** string tokens point to the first character after
-the opening quote and the previous symbol before final quote. This was made 
-to simplify string extraction from JSON data.
+After that you can get the value of each node by calling uJson_get_xxx functions. These functions are:
 
-All job is done by `jsmn_parser` object. You can initialize a new parser using:
+```
+  UJSON_API uJsonError uJson_get_string(char* s, int size, ...);
+  UJSON_API uJsonError uJson_get_string_size(int* size, ...);
 
-	jsmn_parser parser;
-	jsmntok_t tokens[10];
+  UJSON_API uJsonError uJson_get_integer(int *value, ...);
+  UJSON_API uJsonError uJson_get_real(double *value, ...);
 
-	jsmn_init(&parser);
+  UJSON_API uJsonError uJson_get_items(int* items, ...);
+```
+The first parameter of these functions are the out parameter. In anothere word, it saves the result of getting. 
 
-	// js - pointer to JSON string
-	// tokens - an array of tokens available
-	// 10 - number of tokens available
-	jsmn_parse(&parser, js, strlen(js), tokens, 10);
+To get the value of node, we must point out the location of the node. In these functions, the location is passed by variable parameters and the end flag is -1. 
 
-This will create a parser, and then it tries to parse up to 10 JSON tokens from
-the `js` string.
+For example, if we want to get the value of "key" for "[1, {\"key\":\"val\"}]", we can call uJson_get_string like:
 
-A non-negative return value of `jsmn_parse` is the number of tokens actually
-used by the parser.
-Passing NULL instead of the tokens array would not store parsing results, but
-instead the function will return the number of tokens needed to parse the given
-string. This can be useful if you don't know yet how many tokens to allocate.
+  uJson_get_string(buf, 10, 1, "key", -1); // 1, "key", -1 indicates the node is indexed by "key" under the object which is indexed by 1 under the root array. 
+
+
+To create a json string, it quite simple, too. First, you must call uJson_create_root_xxx to create the root element. Then, you call uJson_add_item to fill the element step by step. Here is the sample to build "[1, {\"key\":\"val\"}]":
+
+```
+  char buf[128];
+  uJson_create_root_array(buf, 128); // the content of buf is "[]" after this step
+  uJson_add_item(UJSON_PRIMITIVE, NULL, "1", 0, -1); //  the buf changes to "[1]"
+  uJson_add_item(UJSON_PRIMITIVE, NULL, "{}", 1, -1); // the buf changes to "[1, {}]"
+  uJson_add_item(UJSON_STRING, "key", "val", 1, -1); // the buf changes to "[1, {\"key\":\"val\"}]" finally
+```
+
+
+
 
 If something goes wrong, you will get an error. Error will be one of these:
 
-* `JSMN_ERROR_INVAL` - bad token, JSON string is corrupted
-* `JSMN_ERROR_NOMEM` - not enough tokens, JSON string is too large
-* `JSMN_ERROR_PART` - JSON string is too short, expecting more JSON data
+* `UJSON_ERROR_INVAL` - bad token, JSON string is corrupted
+* `UJSON_ERROR_NOMEM` - not enough tokens, JSON string is too large
+* `UJSON_ERROR_PART` - JSON string is too short, expecting more JSON data
+* `UJSON_ERROR_KEY` - JSON key error, the key does not exist
+* `UJSON_ERROR_VALUE` - JSON value error, the value is incorrect
 
-If you get `JSMN_ERROR_NOMEM`, you can re-allocate more tokens and call
-`jsmn_parse` once more.  If you read json data from the stream, you can
-periodically call `jsmn_parse` and check if return value is `JSMN_ERROR_PART`.
+If you get `UJSON_ERROR_NOMEM`, you can re-allocate more tokens by changing the definition of macro TOKEN_NUMS in *uJSON.c*.  If you read json data from the stream, you can
+periodically call `uJson_parse` and check if return value is `UJSON_ERROR_PART`.
 You will get this error until you reach the end of JSON data.
 
 Other info
 ----------
-
 This software is distributed under [MIT license](http://www.opensource.org/licenses/mit-license.php),
  so feel free to integrate it in your commercial products.
+ 
+
 
