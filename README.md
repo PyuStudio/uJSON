@@ -73,7 +73,7 @@ it possible to use zero-copy techniques.
 Usage
 -----
 
-Download `uJSON.h` and 'uJSON.c', add files to you proect, done.
+Download `uJSON.h` and 'uJSON.c', add files to you project, done.
 
 ```
 #include "uJSON.h"
