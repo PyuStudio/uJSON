@@ -437,60 +437,83 @@ UJSON_API uJsonError uJson_parse(const char* js) {
 }
 
 
-
-static uJsonError uJson_find(int* location, va_list args)
+static uJsonError uJson_find_object_member(int* index, char* key)
 {
-	int i, len;
-	int level = 0;
-	char* key = 0;
-	char* index = 0;
-	char is_obj_member = 0;
-	char* p;
 	uJsonError err = UJSON_ERROR_KEY;
+	int i = *index;
+	int level = tokens[i].level + 1;
 
-	*location = -1;
+	char* p;
+	int len;
 
-	for (i = 0; i < parser.toknext && err == UJSON_ERROR_KEY; i++) {
+	for (i++; i < parser.toknext; i++) {
 		if (tokens[i].level < level) {
 			break;
 		}
-		if (tokens[i].level > level) {
-			continue;
-		}
-		p = parser.text + tokens[i].key_start;
-		len = tokens[i].key_end - tokens[i].key_start;
+		if (tokens[i].level == level) {
+			p = parser.text + tokens[i].key_start;
+			len = tokens[i].key_end - tokens[i].key_start;
 
-		if ((is_obj_member && len == strlen(key) && strncmp(key, p, len) == 0)
-			|| (!is_obj_member && key == index)) {
-			// match, prepare the next level
-			key = va_arg(args, char*);
-			if (key == (char*)-1) {
-				// the end
-				*location = i;
+			if (strncmp(key, p, len) == 0 && key[len] == 0) {
+				// the key is match, 
+				*index = i;
 				err = UJSON_OK;
-			}
-			else {
-				level++;
-				switch (tokens[i].type) {
-				case UJSON_OBJECT:
-					// go to next level
-					is_obj_member = 1;
-					break;
-				case UJSON_ARRAY:
-					// go to next level
-					is_obj_member = 0;
-					index = 0;
-					key++;
-					break;
-				case UJSON_STRING:
-				case UJSON_PRIMITIVE:
-					break;
-				}
+				break;
 			}
 		}
-		index++;
 	}
+	return err;
+}
 
+static uJsonError uJson_find_array_member(int* index, int key)
+{
+	uJsonError err = UJSON_ERROR_KEY;
+	int i = *index;
+	int level = tokens[i].level + 1;
+
+	int element_index;
+
+	for (i++, element_index=0; i < parser.toknext; i++) {
+		if (tokens[i].level < level) {
+			break;
+		}
+		if (tokens[i].level == level) {
+			if (element_index == key) {
+				// the key is match, 
+				*index = i;
+				err = UJSON_OK;
+				break;
+			}
+			element_index++;
+		}
+	}
+	return err;
+}
+
+
+
+static uJsonError uJson_find(int* location, va_list args)
+{
+	char* key;
+	int index = 0;
+	uJsonError err = UJSON_OK;
+
+	for(key = va_arg(args, char*); key != (char*)-1 && err == UJSON_OK; key = va_arg(args, char*)) {
+		switch (tokens[index].type) {
+		case UJSON_OBJECT:
+			err = uJson_find_object_member(&index, key);
+			break;
+		case UJSON_ARRAY:
+			err = uJson_find_array_member(&index, (int)key);
+			break;
+		default:
+			// there is no child under this node
+			err = UJSON_ERROR_KEY;
+			break;
+		}
+		
+	}
+	*location = index;
 	return err;
 }
 
