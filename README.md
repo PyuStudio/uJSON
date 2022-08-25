@@ -5,7 +5,7 @@ Why uJSON?
 ----------
 
 Recently, I needed a json parser for my project. The project is for an embeded system and its resorce is limited. 
-I studied server open json parser. But none of them met my requirement. Some need malloc/free functions, some are hard to use. 
+I studied several json parsers. But none of them met my requirement. Some need malloc/free functions, some are hard to use. 
 
 Finally, I decided to write the json parser by my self. 
 
